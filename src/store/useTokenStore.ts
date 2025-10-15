@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ColorStep, generateColorScale } from "@/lib/color";
+import { PALETTE_TEMPLATES } from "@/lib/palettes";
 import { TypeScaleStep, createTypeScale } from "@/lib/typography";
 
 export type TokenTypography = {
@@ -25,14 +26,26 @@ export type ProjectSnapshot = {
   typography: TokenTypography;
   contrast: ContrastSelection;
   updatedAt: string;
+  templateId?: string;
 };
 
-const DEFAULT_SEED = "#6750A4";
-const DEFAULT_HUE_SHIFT = 0;
-const DEFAULT_CHROMA_SCALE = 1;
-const DEFAULT_LIGHTNESS_BIAS = 0;
+export const CUSTOM_TEMPLATE_ID = "custom";
+const DEFAULT_TEMPLATE_ID = "modern-violet";
 
-const defaultScale = generateColorScale(DEFAULT_SEED);
+const defaultTemplate =
+  PALETTE_TEMPLATES.find((template) => template.id === DEFAULT_TEMPLATE_ID) ??
+  PALETTE_TEMPLATES[0];
+
+const DEFAULT_SEED = defaultTemplate?.colorSeed ?? "#6750A4";
+const DEFAULT_HUE_SHIFT = defaultTemplate?.hueShift ?? 0;
+const DEFAULT_CHROMA_SCALE = defaultTemplate?.chromaScale ?? 1;
+const DEFAULT_LIGHTNESS_BIAS = defaultTemplate?.lightnessBias ?? 0;
+
+const defaultScale = generateColorScale(DEFAULT_SEED, {
+  hueShift: DEFAULT_HUE_SHIFT,
+  chromaScale: DEFAULT_CHROMA_SCALE,
+  lightnessBias: DEFAULT_LIGHTNESS_BIAS,
+});
 const defaultTypography: TokenTypography = {
   font: "Inter",
   baseSize: 16,
@@ -45,6 +58,7 @@ type TokenStore = {
   hueShift: number;
   chromaScale: number;
   lightnessBias: number;
+  selectedTemplateId: string;
   locks: Record<number, boolean>;
   scale: ColorStep[];
   typography: TokenTypography;
@@ -64,6 +78,7 @@ type TokenStore = {
     loadProject: (name: string) => void;
     removeProject: (name: string) => void;
     importProject: (project: ProjectSnapshot, name: string) => void;
+    applyTemplate: (templateId: string) => void;
     reset: () => void;
   };
 };
@@ -75,6 +90,7 @@ export const useTokenStore = create<TokenStore>()(
       hueShift: DEFAULT_HUE_SHIFT,
       chromaScale: DEFAULT_CHROMA_SCALE,
       lightnessBias: DEFAULT_LIGHTNESS_BIAS,
+      selectedTemplateId: defaultTemplate?.id ?? CUSTOM_TEMPLATE_ID,
       locks: {},
       scale: defaultScale,
       typography: defaultTypography,
@@ -85,19 +101,19 @@ export const useTokenStore = create<TokenStore>()(
       savedProjects: {},
       actions: {
         setSeed: (value) => {
-          set({ colorSeed: value });
+          set({ colorSeed: value, selectedTemplateId: CUSTOM_TEMPLATE_ID });
           get().actions.regenerateScale();
         },
         setHueShift: (value) => {
-          set({ hueShift: value });
+          set({ hueShift: value, selectedTemplateId: CUSTOM_TEMPLATE_ID });
           get().actions.regenerateScale();
         },
         setChromaScale: (value) => {
-          set({ chromaScale: value });
+          set({ chromaScale: value, selectedTemplateId: CUSTOM_TEMPLATE_ID });
           get().actions.regenerateScale();
         },
         setLightnessBias: (value) => {
-          set({ lightnessBias: value });
+          set({ lightnessBias: value, selectedTemplateId: CUSTOM_TEMPLATE_ID });
           get().actions.regenerateScale();
         },
         toggleLock: (index) =>
@@ -127,6 +143,7 @@ export const useTokenStore = create<TokenStore>()(
         },
         setStepHex: (index, hex) =>
           set((state) => ({
+            selectedTemplateId: CUSTOM_TEMPLATE_ID,
             scale: state.scale.map((step) =>
               step.id === index
                 ? {
@@ -170,6 +187,7 @@ export const useTokenStore = create<TokenStore>()(
             typography: get().typography,
             contrast: get().contrast,
             updatedAt: new Date().toISOString(),
+            templateId: get().selectedTemplateId,
           };
 
           set((state) => ({
@@ -191,6 +209,7 @@ export const useTokenStore = create<TokenStore>()(
             scale: project.scale,
             typography: project.typography,
             contrast: project.contrast,
+            selectedTemplateId: project.templateId ?? CUSTOM_TEMPLATE_ID,
           });
         },
         removeProject: (name) =>
@@ -217,32 +236,114 @@ export const useTokenStore = create<TokenStore>()(
             scale: project.scale,
             typography: project.typography,
             contrast: project.contrast,
+            selectedTemplateId: project.templateId ?? CUSTOM_TEMPLATE_ID,
+          });
+        },
+        applyTemplate: (templateId) => {
+          const template = PALETTE_TEMPLATES.find((item) => item.id === templateId);
+          if (!template) return;
+
+          const nextScale = generateColorScale(template.colorSeed, {
+            hueShift: template.hueShift,
+            chromaScale: template.chromaScale,
+            lightnessBias: template.lightnessBias,
+          });
+
+          set({
+            colorSeed: template.colorSeed,
+            hueShift: template.hueShift,
+            chromaScale: template.chromaScale,
+            lightnessBias: template.lightnessBias,
+            locks: {},
+            scale: nextScale,
+            selectedTemplateId: template.id,
+            contrast: {
+              foreground: nextScale[7]?.hex ?? "#111111",
+              background: nextScale[1]?.hex ?? "#FFFFFF",
+            },
           });
         },
         reset: () =>
-          set({
-            colorSeed: DEFAULT_SEED,
-            hueShift: DEFAULT_HUE_SHIFT,
-            chromaScale: DEFAULT_CHROMA_SCALE,
-            lightnessBias: DEFAULT_LIGHTNESS_BIAS,
-            locks: {},
-            scale: defaultScale,
-            typography: defaultTypography,
-            contrast: {
-              foreground: defaultScale[7]?.hex ?? "#111111",
-              background: defaultScale[1]?.hex ?? "#FFFFFF",
-            },
+          set(() => {
+            const template = defaultTemplate;
+            if (template) {
+              const nextScale = generateColorScale(template.colorSeed, {
+                hueShift: template.hueShift,
+                chromaScale: template.chromaScale,
+                lightnessBias: template.lightnessBias,
+              });
+
+              return {
+                colorSeed: template.colorSeed,
+                hueShift: template.hueShift,
+                chromaScale: template.chromaScale,
+                lightnessBias: template.lightnessBias,
+                locks: {},
+                scale: nextScale,
+                typography: defaultTypography,
+                contrast: {
+                  foreground: nextScale[7]?.hex ?? "#111111",
+                  background: nextScale[1]?.hex ?? "#FFFFFF",
+                },
+                selectedTemplateId: template.id,
+              };
+            }
+
+            return {
+              colorSeed: DEFAULT_SEED,
+              hueShift: DEFAULT_HUE_SHIFT,
+              chromaScale: DEFAULT_CHROMA_SCALE,
+              lightnessBias: DEFAULT_LIGHTNESS_BIAS,
+              locks: {},
+              scale: defaultScale,
+              typography: defaultTypography,
+              contrast: {
+                foreground: defaultScale[7]?.hex ?? "#111111",
+                background: defaultScale[1]?.hex ?? "#FFFFFF",
+              },
+              selectedTemplateId: defaultTemplate?.id ?? CUSTOM_TEMPLATE_ID,
+            };
           }),
       },
     }),
     {
       name: "blankspace-tokens",
-      version: 1,
+      version: 2,
+      migrate: (persistedState, version) => {
+        if (!persistedState || typeof persistedState !== "object") {
+          return persistedState;
+        }
+
+        if (version < 2) {
+          const state = persistedState as Partial<TokenStore> & {
+            savedProjects?: Record<string, ProjectSnapshot>;
+          };
+
+          const updatedProjects = Object.fromEntries(
+            Object.entries(state.savedProjects ?? {}).map(([key, snapshot]) => [
+              key,
+              {
+                ...snapshot,
+                templateId: snapshot.templateId ?? CUSTOM_TEMPLATE_ID,
+              },
+            ]),
+          );
+
+          return {
+            ...state,
+            selectedTemplateId: state.selectedTemplateId ?? CUSTOM_TEMPLATE_ID,
+            savedProjects: updatedProjects,
+          };
+        }
+
+        return persistedState;
+      },
       partialize: (state) => ({
         colorSeed: state.colorSeed,
         hueShift: state.hueShift,
         chromaScale: state.chromaScale,
         lightnessBias: state.lightnessBias,
+        selectedTemplateId: state.selectedTemplateId,
         locks: state.locks,
         scale: state.scale,
         typography: state.typography,

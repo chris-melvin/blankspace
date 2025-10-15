@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { Section } from "@/components/Section";
-import { useTokenStore } from "@/store/useTokenStore";
+import { PaletteTemplate, PALETTE_TEMPLATES } from "@/lib/palettes";
+import { CUSTOM_TEMPLATE_ID, useTokenStore } from "@/store/useTokenStore";
 import { useShallow } from "zustand/react/shallow";
 
 const Slider = ({
@@ -108,12 +109,54 @@ const ColorCard = ({
   );
 };
 
+const TemplateOption = ({
+  template,
+  active,
+  onSelect,
+}: {
+  template: PaletteTemplate;
+  active: boolean;
+  onSelect: () => void;
+}) => {
+  const gradient = useMemo(
+    () => ({
+      backgroundImage: `linear-gradient(90deg, ${template.steps.join(", ")})`,
+    }),
+    [template.steps],
+  );
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex flex-col gap-2 rounded-lg border px-3 py-2 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 ${
+        active
+          ? "border-slate-900 bg-slate-900/5 shadow-sm ring-2 ring-slate-900 dark:border-slate-100 dark:bg-white/5 dark:ring-slate-100"
+          : "border-black/10 hover:border-slate-400 dark:border-white/10 dark:hover:border-white/20"
+      }`}
+    >
+      <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        {template.name}
+      </span>
+      <span
+        aria-hidden
+        className="h-2 w-full rounded-full"
+        style={gradient}
+      />
+      <span className="text-xs text-slate-500 dark:text-slate-300">
+        {template.description}
+      </span>
+    </button>
+  );
+};
+
 export const ColorScaleGenerator = () => {
   const {
     colorSeed,
     hueShift,
     chromaScale,
     lightnessBias,
+    selectedTemplateId,
     locks,
     scale,
     actions,
@@ -123,10 +166,16 @@ export const ColorScaleGenerator = () => {
       hueShift: state.hueShift,
       chromaScale: state.chromaScale,
       lightnessBias: state.lightnessBias,
+      selectedTemplateId: state.selectedTemplateId,
       locks: state.locks,
       scale: state.scale,
       actions: state.actions,
     })),
+  );
+
+  const activeTemplate = useMemo(
+    () => PALETTE_TEMPLATES.find((template) => template.id === selectedTemplateId),
+    [selectedTemplateId],
   );
 
   const gradients = useMemo(
@@ -138,10 +187,15 @@ export const ColorScaleGenerator = () => {
     [scale],
   );
 
+  const description =
+    selectedTemplateId === CUSTOM_TEMPLATE_ID || !activeTemplate
+      ? "Generate perceptually-uniform 10-step color ramps using OKLCH controls. Manual tweaks are saved as a custom palette."
+      : `Generate perceptually-uniform 10-step color ramps using OKLCH controls. Currently using the ${activeTemplate.name} template.`;
+
   return (
     <Section
       title="Color Scale Generator"
-      description="Generate perceptually-uniform 10-step color ramps using OKLCH controls. Fine tune hue, chroma, and lightness and pin steps you want to keep."
+      description={description}
       actions={
         <button
           type="button"
@@ -161,6 +215,26 @@ export const ColorScaleGenerator = () => {
         />
         <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,260px)_1fr]">
           <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                Palette Templates
+              </span>
+              <div className="flex flex-col gap-2">
+                {PALETTE_TEMPLATES.map((template) => (
+                  <TemplateOption
+                    key={template.id}
+                    template={template}
+                    active={selectedTemplateId === template.id}
+                    onSelect={() => actions.applyTemplate(template.id)}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-300">
+                {selectedTemplateId === CUSTOM_TEMPLATE_ID || !activeTemplate
+                  ? "Manual adjustments detected. Save this custom palette to reuse it later."
+                  : `Based on the ${activeTemplate.name} template. Adjusting the controls will create a custom palette.`}
+              </p>
+            </div>
             <label className="flex flex-col gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                 Seed Color
