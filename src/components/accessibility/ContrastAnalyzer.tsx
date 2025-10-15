@@ -2,6 +2,9 @@
 
 import { Section } from "@/components/Section";
 import { evaluateContrast } from "@/lib/contrast";
+import { tokens } from "@/lib/tokens";
+import { evaluateGradientContrast } from "@/lib/gradients";
+import { useEffect, useState } from "react";
 import { useTokenStore } from "@/store/useTokenStore";
 import { useShallow } from "zustand/react/shallow";
 
@@ -28,6 +31,13 @@ export const ContrastAnalyzer = () => {
   );
 
   const contrast = evaluateContrast(foreground, background);
+  const [gradientReport, setGradientReport] = useState<{ min: number; avg: number; max: number } | null>(null);
+
+  // Compute gradient contrast only on the client to avoid SSR/CSR mismatch
+  useEffect(() => {
+    const report = evaluateGradientContrast(tokens.gradient.brandSoft, foreground, 12);
+    setGradientReport(report);
+  }, [foreground]);
 
   return (
     <Section
@@ -91,6 +101,24 @@ export const ContrastAnalyzer = () => {
               <Badge label="AA" active={contrast.aa} />
               <Badge label="AA Large" active={contrast.aaLarge} />
               <Badge label="AAA Large" active={contrast.aaaLarge} />
+            </div>
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Gradient (brandSoft) min/avg/max vs text
+              </p>
+              {gradientReport ? (
+                <>
+                  <p className="text-sm">{gradientReport.min.toFixed(2)} / {gradientReport.avg.toFixed(2)} / {gradientReport.max.toFixed(2)}</p>
+                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="mr-2">AA min ≥ 4.5:</span>
+                    <span className={gradientReport.min >= 4.5 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                      {gradientReport.min >= 4.5 ? 'Pass' : 'Fail'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm opacity-60">— / — / —</p>
+              )}
             </div>
           </div>
         </div>

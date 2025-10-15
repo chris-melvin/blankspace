@@ -1,5 +1,6 @@
 import { ColorStep } from "@/lib/color";
 import { TokenTypography } from "@/store/useTokenStore";
+import { tokens } from "./tokens";
 
 const indent = (level: number) => "  ".repeat(level);
 
@@ -75,7 +76,26 @@ export const createJsonTokens = (
         }),
         {},
       ),
+      semantic: {
+        surface: "var(--color-surface)",
+        surfaceElevated: "var(--color-surface-elevated)",
+        surfaceMuted: "var(--color-surface-muted)",
+        text: "var(--color-text)",
+        textMuted: "var(--color-text-muted)",
+        border: "var(--color-border)",
+        focus: "var(--color-focus)",
+        brandFg: "var(--color-brand-fg)",
+        brandBg: "var(--color-brand-bg)",
+      },
+      accent: {
+        40: tokens.color.accent[40],
+        50: tokens.color.accent[50],
+      },
+      success: tokens.color.success,
+      warning: tokens.color.warning,
+      danger: tokens.color.danger,
     },
+    gradients: tokens.gradient,
     typography: {
       fontFamily: typography.font,
       scale: typography.scale.reduce(
@@ -89,6 +109,9 @@ export const createJsonTokens = (
         {},
       ),
     },
+    radii: tokens.radii,
+    shadows: tokens.shadows,
+    motion: tokens.motion,
   };
 
   return JSON.stringify(json, null, 2);

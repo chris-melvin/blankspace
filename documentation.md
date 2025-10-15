@@ -7,6 +7,67 @@ Think of it as *UIColors.app*, but extended for your **entire visual system**.
 
 ---
 
+## 📖 Brandbook (Code-Only System)
+
+The app now ships with a code-based brand system aligned to a minimal, modern tech aesthetic. Explore the live brandbook pages:
+
+- `/brandbook` — index
+- `/brandbook/tokens` — typography scale, radii, shadows
+- `/brandbook/colors` — semantic colors and brand/accent scales
+- `/brandbook/gradients` — semantic gradients gallery
+- `/brandbook/typography` — type families and scale previews
+- `/brandbook/components` — Buttons, Badges, Cards with semantic colors and gradients
+
+### How tokens are structured
+- Source of truth lives in `src/lib/tokens.ts`
+  - Colors: neutral, brand, accent, success, warning, danger
+  - Semantic: `--color-surface`, `--color-text`, `--color-border`, etc.
+  - Gradients: `brandSoft`, `brandVibrant`, `accentSoft`
+  - Typography scale, radii, shadows, motion
+
+### Using ThemeProvider
+`ThemeProvider` injects CSS variables to `:root` and syncs semantic tokens and scales.
+
+```tsx
+// Wrap your app once, e.g., in src/app/layout.tsx
+import { ThemeProvider } from "@/components/ThemeProvider";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### Applying gradients
+Use foundation helpers or CSS variables directly:
+
+```tsx
+import { GradientBackground } from "@/components/foundations/GradientBackground";
+import { GradientText } from "@/components/foundations/GradientText";
+
+// Background
+<GradientBackground gradient="brandSoft" className="rounded-lg p-6" />
+
+// Text
+<h1 className="text-3xl font-bold">
+  <GradientText gradient="brandVibrant">Minimal Modern Tech</GradientText>
+</h1>
+```
+
+### Accessibility for gradients
+`ContrastAnalyzer` now reports min/avg/max contrast for a sampled gradient vs a chosen text color, using `evaluateGradientContrast`. Aim for min ≥ 4.5 for AA small text.
+
+### Exporting the system
+`src/lib/exporters.ts` now emits:
+- Tailwind config snippet (brand scale + typography)
+- CSS variables (brand scale + type sizes)
+- JSON tokens including semantic colors, gradients, radii, shadows, motion
+
 ## 🚀 Overview
 
 blankspace is a comprehensive design token generator that bridges the gap between design and development. It empowers teams to create, test, and maintain consistent design systems through:

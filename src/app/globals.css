@@ -1,15 +1,39 @@
 @import "tailwindcss";
 
 :root {
+  /* base background/foreground for legacy usage */
   --background: #ffffff;
   --foreground: #171717;
+
+  /* semantic brand system variables (injected/overridden by ThemeProvider) */
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f7f8fb;
+  --color-surface-muted: #f2f4f8;
+  --color-text: #0a0a0a;
+  --color-text-muted: #3b3f46;
+  --color-border: #e5e7eb;
+  --color-focus: hsla(220, 90%, 56%, 0.6);
+  --color-brand-fg: hsl(220 90% 56%);
+  --color-brand-bg: hsl(220 90% 98%);
+
+  /* brand/accent scale variables consumed by gradients */
+  --color-brand-30: hsl(220 85% 48%);
+  --color-brand-40: hsl(220 88% 56%);
+  --color-brand-50: hsl(220 90% 62%);
+  --color-brand-60: hsl(220 92% 67%);
+  --color-accent-40: hsl(260 80% 60%);
+  --color-accent-50: hsl(260 85% 66%);
+
+  /* typography */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +44,7 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-family: Arial, Helvetica, sans-serif;
 }
