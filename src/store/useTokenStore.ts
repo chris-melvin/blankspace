@@ -301,7 +301,7 @@ export const useTokenStore = create<TokenStore>()(
                 foreground: defaultScale[7]?.hex ?? "#111111",
                 background: defaultScale[1]?.hex ?? "#FFFFFF",
               },
-              selectedTemplateId: defaultTemplate?.id ?? CUSTOM_TEMPLATE_ID,
+              selectedTemplateId: CUSTOM_TEMPLATE_ID,
             };
           }),
       },
