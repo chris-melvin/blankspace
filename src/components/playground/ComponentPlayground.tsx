@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useId, useState } from "react";
 
 import { Section } from "@/components/Section";
 import { useTokenStore } from "@/store/useTokenStore";
@@ -219,6 +219,141 @@ const TestimonialPreview = ({ tokens }: PreviewProps) => (
   </div>
 );
 
+const TabsPreview = ({ tokens }: PreviewProps) => {
+  const [activeTab, setActiveTab] = useState("metrics");
+  const tabs = [
+    {
+      value: "metrics",
+      label: "Metrics",
+      description: "Usage, activation, retention in one stream.",
+    },
+    {
+      value: "engagement",
+      label: "Engagement",
+      description: "Collaboration stats, comments, and reactions.",
+    },
+    {
+      value: "billing",
+      label: "Billing",
+      description: "Revenue, seats, and overage alerts for finance.",
+    },
+  ];
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") {
+      return;
+    }
+
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex = (index + direction + tabs.length) % tabs.length;
+    setActiveTab(tabs[nextIndex]?.value ?? tabs[0]!.value);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        role="tablist"
+        aria-label="Workspace insights"
+        className="inline-flex items-center gap-1 rounded-full border p-1"
+        style={{
+          backgroundColor: tokens.surface,
+          borderColor: tokens.border,
+        }}
+      >
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.value;
+
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`${tab.value}-panel`}
+              id={`${tab.value}-trigger`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => setActiveTab(tab.value)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
+              className="rounded-full px-4 py-1.5 text-xs font-semibold transition"
+              style={{
+                backgroundColor: isActive ? tokens.accent : tokens.surface,
+                color: isActive ? tokens.surface : tokens.textMuted,
+                boxShadow: isActive ? `0 0 0 1px ${tokens.accent}` : undefined,
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        id={`${activeTab}-panel`}
+        role="tabpanel"
+        aria-labelledby={`${activeTab}-trigger`}
+        className="space-y-3 rounded-lg border p-5"
+        style={{
+          backgroundColor: tokens.surface,
+          borderColor: tokens.surfaceSubtle,
+        }}
+      >
+        {(() => {
+          const active = tabs.find((tab) => tab.value === activeTab) ?? tabs[0]!;
+
+          return (
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: tokens.textPrimary }}>
+                  {active.label}
+                </p>
+                <p className="text-xs" style={{ color: tokens.textMuted }}>
+                  {active.description}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-full px-3 py-1 text-xs font-semibold"
+                style={{
+                  backgroundColor: tokens.surface,
+                  color: tokens.accent,
+                  borderColor: tokens.accent,
+                  borderWidth: 1,
+                  borderStyle: "solid",
+                }}
+              >
+                View report
+              </button>
+            </div>
+          );
+        })()}
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "Active seats", value: "248" },
+            { label: "Weekly retention", value: "92%" },
+            { label: "Automation saves", value: "14.3h" },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-lg border p-3"
+              style={{
+                backgroundColor: tokens.background,
+                borderColor: tokens.surfaceSubtle,
+              }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.textMuted }}>
+                {stat.label}
+              </p>
+              <p className="mt-1 text-lg font-semibold" style={{ color: tokens.textPrimary }}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const FormPreview = ({ tokens }: PreviewProps) => (
   <form className="space-y-4">
     <label className="flex flex-col gap-2 text-sm font-medium" style={{ color: tokens.textPrimary }}>
@@ -265,6 +400,85 @@ const FormPreview = ({ tokens }: PreviewProps) => (
   </form>
 );
 
+const SwitchPreview = ({ tokens }: PreviewProps) => {
+  const [states, setStates] = useState({
+    updates: true,
+    digests: false,
+    automation: true,
+  });
+
+  const toggle = (key: keyof typeof states) => {
+    setStates((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  };
+
+  const baseId = useId();
+
+  return (
+    <div className="space-y-4 rounded-xl border p-5" style={{ backgroundColor: tokens.surface, borderColor: tokens.border }}>
+      <header className="space-y-1">
+        <p className="text-sm font-semibold" style={{ color: tokens.textPrimary }}>
+          Notification toggles
+        </p>
+        <p className="text-xs" style={{ color: tokens.textMuted }}>
+          Switch patterns mirror Radix primitives with semantic tokens.
+        </p>
+      </header>
+      <div className="space-y-4">
+        {(
+          [
+            { key: "updates" as const, label: "Product updates", description: "Launches, invites, and template drops." },
+            { key: "digests" as const, label: "Executive digest", description: "Weekly KPIs for leadership inboxes." },
+            { key: "automation" as const, label: "Automation nudges", description: "When flows are idle or need approval." },
+          ] as const
+        ).map((item) => {
+          const switchId = `${baseId}-${item.key}`;
+          const isOn = states[item.key];
+
+          return (
+            <div
+              key={item.key}
+              className="flex items-center justify-between gap-4 rounded-lg border p-3"
+              style={{ borderColor: tokens.surfaceSubtle }}
+            >
+              <div className="space-y-1">
+                <label htmlFor={switchId} className="text-sm font-medium" style={{ color: tokens.textPrimary }}>
+                  {item.label}
+                </label>
+                <p className="text-xs" style={{ color: tokens.textMuted }}>
+                  {item.description}
+                </p>
+              </div>
+              <button
+                id={switchId}
+                type="button"
+                role="switch"
+                aria-checked={isOn}
+                onClick={() => toggle(item.key)}
+                className="relative inline-flex h-6 w-11 items-center rounded-full border transition"
+                style={{
+                  borderColor: isOn ? tokens.accent : tokens.surfaceSubtle,
+                  backgroundColor: isOn ? tokens.accent : tokens.surface,
+                }}
+              >
+                <span
+                  className="inline-block size-4 translate-x-1 rounded-full bg-white shadow-sm transition"
+                  style={{
+                    transform: isOn ? "translateX(18px)" : "translateX(4px)",
+                    backgroundColor: isOn ? tokens.surface : tokens.textMuted,
+                  }}
+                />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const TablePreview = ({ tokens }: PreviewProps) => (
   <div className="overflow-hidden rounded-lg border" style={{ borderColor: tokens.border }}>
     <table className="min-w-full divide-y text-left text-sm" style={{ color: tokens.textPrimary }}>
@@ -302,11 +516,98 @@ const TablePreview = ({ tokens }: PreviewProps) => (
   </div>
 );
 
+const AccordionPreview = ({ tokens }: PreviewProps) => {
+  const [openItem, setOpenItem] = useState<string | null>("1");
+
+  const items = [
+    {
+      value: "1",
+      title: "Automations now support branching",
+      content: "Design tokens sync across all flow variants so QA sees every edge.",
+    },
+    {
+      value: "2",
+      title: "Figma plugin parity",
+      content: "Preview new gradients, primitives, and typography sets directly in Figma.",
+    },
+    {
+      value: "3",
+      title: "CLI pipelines",
+      content: "Trigger token exports in CI with signed manifests and audit trails.",
+    },
+  ];
+
+  return (
+    <div className="space-y-3 rounded-xl border p-5" style={{ backgroundColor: tokens.surface, borderColor: tokens.border }}>
+      <header className="space-y-1">
+        <p className="text-sm font-semibold" style={{ color: tokens.textPrimary }}>
+          Release cadence
+        </p>
+        <p className="text-xs" style={{ color: tokens.textMuted }}>
+          Accordion patterns reveal how surfaces, borders, and text tokens layer.
+        </p>
+      </header>
+      <div className="space-y-2">
+        {items.map((item) => {
+          const isOpen = openItem === item.value;
+
+          return (
+            <div key={item.value} className="overflow-hidden rounded-lg border" style={{ borderColor: tokens.surfaceSubtle }}>
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-controls={`accordion-${item.value}`}
+                id={`accordion-${item.value}-trigger`}
+                className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-medium"
+                style={{
+                  backgroundColor: isOpen ? tokens.surfaceSubtle : tokens.surface,
+                  color: tokens.textPrimary,
+                }}
+                onClick={() => setOpenItem(isOpen ? null : item.value)}
+              >
+                <span>{item.title}</span>
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold"
+                  style={{
+                    backgroundColor: isOpen ? tokens.accent : tokens.background,
+                    color: isOpen ? tokens.surface : tokens.textMuted,
+                    borderColor: tokens.surfaceSubtle,
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                  }}
+                >
+                  {isOpen ? "–" : "+"}
+                </span>
+              </button>
+              {isOpen ? (
+                <div
+                  id={`accordion-${item.value}`}
+                  role="region"
+                  aria-labelledby={`accordion-${item.value}-trigger`}
+                  className="border-t px-4 py-3 text-sm"
+                  style={{
+                    backgroundColor: tokens.background,
+                    borderColor: tokens.surfaceSubtle,
+                    color: tokens.textMuted,
+                  }}
+                >
+                  {item.content}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 type ComponentDescriptor = {
   id: string;
   title: string;
   description: string;
-  category: "Dashboards" | "Navigation" | "Marketing" | "Forms" | "Data";
+  category: "Dashboards" | "Navigation" | "Marketing" | "Forms" | "Data" | "Content";
   component: (props: PreviewProps) => JSX.Element;
 };
 
@@ -340,6 +641,13 @@ const componentDescriptors: ComponentDescriptor[] = [
     component: TestimonialPreview,
   },
   {
+    id: "radix-tabs",
+    title: "Navigation • Workspace Tabs",
+    description: "Radix-style tabs show how accent hues communicate active state.",
+    category: "Navigation",
+    component: TabsPreview,
+  },
+  {
     id: "form-settings",
     title: "Forms • Settings Panel",
     description: "Input fields and toggles show how borders and accents communicate state.",
@@ -352,6 +660,20 @@ const componentDescriptors: ComponentDescriptor[] = [
     description: "Tables rely on nuanced surfaces and borders for quick scanning.",
     category: "Data",
     component: TablePreview,
+  },
+  {
+    id: "radix-switches",
+    title: "Forms • Notification Toggles",
+    description: "Preview Radix-inspired switches driven by semantic tokens.",
+    category: "Forms",
+    component: SwitchPreview,
+  },
+  {
+    id: "radix-accordion",
+    title: "Content • Release Notes",
+    description: "Accordion disclosure patterns test surface hierarchy and borders.",
+    category: "Content",
+    component: AccordionPreview,
   },
 ];
 
