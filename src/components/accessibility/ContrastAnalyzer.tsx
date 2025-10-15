@@ -65,11 +65,20 @@ export const ContrastAnalyzer = () => {
               }
               className="rounded border border-black/10 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-200"
             >
-              {scale.map((step) => (
-                <option key={step.id} value={step.hex}>
-                  {step.label} — {step.hex.toUpperCase()}
-                </option>
-              ))}
+              <optgroup label="Neutrals">
+                <option value="#FFFFFF">White — #FFFFFF</option>
+                <option value="#F8FAFC">Slate 50 — #F8FAFC</option>
+                <option value="#F1F5F9">Slate 100 — #F1F5F9</option>
+                <option value="#0F172A">Slate 900 — #0F172A</option>
+                <option value="#000000">Black — #000000</option>
+              </optgroup>
+              <optgroup label="Palette">
+                {scale.map((step) => (
+                  <option key={step.id} value={step.hex}>
+                    {step.label} — {step.hex.toUpperCase()}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </label>
           <div className="rounded-lg border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-inner dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
@@ -86,7 +95,7 @@ export const ContrastAnalyzer = () => {
           </div>
         </div>
         <div
-          className="flex min-h-[240px] flex-col justify-between rounded-lg border border-black/5 p-6 shadow-inner transition dark:border-white/10"
+          className="flex min-h-[240px] flex-col rounded-lg border border-black/5 p-6 shadow-inner transition dark:border-white/10"
           style={{
             color: foreground,
             backgroundColor: background,
@@ -101,13 +110,29 @@ export const ContrastAnalyzer = () => {
               Design tokens stay accessible when contrast requirements stay in the
               green. Tune your palette to hit AA or AAA compliance before shipping.
             </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+              <a
+                href="#"
+                className="underline underline-offset-2 hover:opacity-80"
+              >
+                Learn more
+              </a>
+              <span className="rounded-full border border-current/40 px-2 py-0.5 text-xs font-semibold">
+                New
+              </span>
+            </div>
+
+            <div className="mt-5">
+              <label className="block text-sm font-medium">
+                Email address
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="mt-2 w-full rounded border border-current/30 bg-transparent px-3 py-2 text-sm outline-none placeholder:opacity-70 focus:border-current/60"
+                />
+              </label>
+            </div>
           </div>
-          <button
-            type="button"
-            className="mt-6 w-fit rounded-full border border-current px-5 py-2 text-sm font-semibold backdrop-blur hover:bg-black/10 dark:hover:bg-white/20"
-          >
-            Looks great!
-          </button>
         </div>
       </div>
     </Section>
